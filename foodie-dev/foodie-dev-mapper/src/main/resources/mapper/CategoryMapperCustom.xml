@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.imooc.mapper.CategoryMapperCustom">
+
+
+    <!--	id与语句中resultMap相同。对应实体类-->
+    <resultMap id="myCategoryVO" type="com.imooc.pojo.vo.CategoryVO">
+
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="type" property="type"/>
+        <result column="fatherId" property="fatherId"/>
+
+        <!--
+        collection标签 ：用于定义关联的list集合类型的封装规则
+        对应一个集合，property这个属性对应父级实体类中list属性名
+        集合的名称  ofType对应相应实体类类名
+        -->
+        <collection property="subCateList" ofType="com.imooc.pojo.vo.SubCategoryVO">
+            <id column="subId" property="subId"/>
+            <result column="subName" property="subName"/>
+            <result column="subType" property="subType"/>
+            <result column="subFatherId" property="subFatherId"/>
+        </collection>
+    </resultMap>
+
+    <select id="getSubCatList" resultMap="myCategoryVO" parameterType="int">
+		SELECT
+			F.id AS id,
+			F.NAME AS name,
+			F.type AS type,
+			F.father_id AS fatherId,
+			C.id AS subId,
+			C.NAME AS subName,
+			C.type AS subType,
+			C.father_id AS subFatherId
+
+		FROM
+			category F
+			LEFT JOIN category C ON F.id = C.father_id
+		WHERE
+			F.father_id = #{rootCatId}
+
+    </select>
+
+    <resultMap id="myNewItemsVO" type="com.imooc.pojo.vo.NewItemsVO">
+        <id column="rootCatId" property="rootCatId"/>
+        <result column="rootCatName" property="rootCatName"/>
+        <result column="slogan" property="slogan"/>
+        <result column="catImage" property="catImage"/>
+        <result column="bgColor" property="bgColor"/>
+        <collection property="simpleItemVOList" ofType="com.imooc.pojo.vo.SimpleItemVO">
+            <id column="itemId" property="itemId"/>
+            <result column="itemName" property="itemName"/>
+            <result column="itemUrl" property="itemUrl"/>
+            <result column="createdTime" property="createdTime"/>
+        </collection>
+    </resultMap>
+    <select id="getSixNewItemsLazy" resultMap="myNewItemsVO" parameterType="Map">
+        SELECT
+            F.id AS rootCatId,
+            F.NAME AS rootCatName,
+            F.slogan AS slogan,
+            F.cat_image AS catImage,
+            F.bg_color AS bgColor,
+            C.id AS itemId,
+            C.item_name AS itemName,
+            B.url AS itemUrl,
+            C.created_time AS createdTime
+        FROM
+            category F
+            LEFT JOIN items C ON F.id = C.root_cat_id
+            LEFT JOIN items_img B ON C.id = B.item_id
+        WHERE
+            F.type = 1
+            AND C.root_cat_id = #{paramMap.rootCatId}
+            AND B.is_main = 1
+        ORDER BY
+            C.created_time DESC
+            LIMIT 0,6
+    </select>
+
+
+</mapper>
